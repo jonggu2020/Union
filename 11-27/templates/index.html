@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUBG 전적 검색</title>
+    <style>
+        :root {
+            --bg-color: #1b1b1b;
+            --card-bg: #2a2a2a;
+            --text-color: #e0e0e0;
+            --accent-color: #f2a900;
+            --win-color: #4caf50;
+            --loss-color: #ff5252;
+        }
+        body { 
+            font-family: 'Noto Sans KR', sans-serif; 
+            background-color: var(--bg-color); color: var(--text-color); 
+            margin: 0; padding: 20px; 
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        /* 검색창 */
+        .search-container { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; margin-top: 50px;}
+        input { padding: 12px; width: 300px; background: #333; border: 1px solid #555; color: white; border-radius: 5px; }
+        button { padding: 12px 24px; background-color: var(--accent-color); color: black; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; }
+        button:hover { background-color: #d99600; }
+
+        /* TPP/FPP 토글 스위치 디자인 */
+        .view-toggle { 
+            display: flex; justify-content: center; margin-bottom: 20px; 
+            background: #333; width: fit-content; margin: 0 auto 30px; 
+            border-radius: 20px; padding: 5px;
+        }
+        .view-toggle label {
+            padding: 8px 25px; cursor: pointer; border-radius: 15px; font-weight: bold; transition: 0.3s;
+        }
+        .view-toggle input[type="radio"] { display: none; }
+        .view-toggle input[type="radio"]:checked + label {
+            background-color: var(--accent-color); color: black;
+        }
+
+        #loading, #error-msg { text-align: center; display: none; margin: 20px; }
+        #error-msg { color: #ff4444; }
+        #main-content { display: none; }
+
+        .profile-header { text-align: center; margin-bottom: 30px; }
+        .profile-header h1 { margin: 0; color: white; font-size: 2em; }
+        .profile-header p { color: #888; margin-top: 5px; }
+
+        /* 섹션 타이틀 */
+        .section-title { font-size: 1.2em; border-left: 4px solid var(--accent-color); padding-left: 10px; margin: 40px 0 15px; font-weight: bold; }
+
+        /* 요약 카드 그리드 */
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .stat-card { background: var(--card-bg); padding: 20px; border-radius: 8px; text-align: center; }
+        .stat-card h3 { margin: 0 0 15px; font-size: 1.1em; color: var(--accent-color); border-bottom: 1px solid #444; padding-bottom: 10px;}
+        .stat-detail { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9em; }
+        .stat-val { font-weight: bold; }
+
+        /* 매치 히스토리 */
+        .match-list { display: flex; flex-direction: column; gap: 10px; }
+        .match-item { 
+            background: var(--card-bg); display: flex; align-items: center; 
+            padding: 15px; border-radius: 8px; border-left: 5px solid #555;
+            transition: transform 0.2s;
+        }
+        .match-item:hover { transform: translateX(5px); }
+        .match-item.win { border-left-color: var(--win-color); background: rgba(76, 175, 80, 0.1); }
+        .match-item.top10 { border-left-color: #2196f3; } /* Top 10 파란색 */
+
+        .m-rank { width: 60px; text-align: center; font-size: 1.5em; font-weight: 900; color: #888; }
+        .win .m-rank { color: var(--win-color); }
+        .top10 .m-rank { color: #2196f3; }
+
+        .m-info { flex-grow: 1; margin-left: 20px; }
+        .m-map { font-weight: bold; font-size: 1.1em; display: block;}
+        .m-meta { font-size: 0.8em; color: #aaa; margin-top: 4px; }
+        
+        .m-stats { display: flex; gap: 20px; text-align: center; margin-right: 10px;}
+        .m-stat-item span { display: block; font-size: 0.8em; color: #aaa; }
+        .m-stat-item strong { display: block; font-size: 1.1em; }
+
+        /* 반응형 */
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .match-item { flex-direction: column; align-items: flex-start; }
+            .m-stats { margin-top: 15px; width: 100%; justify-content: space-around; }
+        }
+
+        /* 맵 색상 유틸 */
+        .map-Erangel_Main { color: #8bc34a; } .map-Miramar { color: #ffb74d; } .map-Savage_Main { color: #4dd0e1; } 
+        .map-Vikendi { color: #ce93d8; } .map-Taego { color: #ff8a65; } .map-Neon_Main { color: #b39ddb; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="search-container">
+        <input type="text" id="nicknameInput" placeholder="닉네임 (대소문자 정확히 입력)">
+        <button onclick="startSearch()">전적 검색</button>
+    </div>
+
+    <div class="view-toggle">
+        <input type="radio" id="tpp" name="viewMode" value="tpp" checked onchange="updateUI()">
+        <label for="tpp">TPP (3인칭)</label>
+        
+        <input type="radio" id="fpp" name="viewMode" value="fpp" onchange="updateUI()">
+        <label for="fpp">FPP (1인칭)</label>
+    </div>
+
+    <div id="loading">데이터 조회중...</div>
+    <div id="error-msg"></div>
+
+    <div id="main-content">
+        <div class="profile-header">
+            <h1 id="res-nickname">User</h1>
+            <p>Lifetime Season Stats</p>
+        </div>
+
+        <div class="section-title">📊 시즌 요약</div>
+        <div class="stats-grid" id="summary-stats">
+            </div>
+
+        <div class="section-title">🕒 최근 매치 기록</div>
+        <div class="match-list" id="match-history">
+            </div>
+    </div>
+</div>
+
+<script>
+    // Flask가 같은 도메인에서 HTML을 서빙하므로 URL은 빈칸('')으로 두거나 / 로 시작하면 됩니다.
+    const API_URL = ""; 
+
+    let globalStats = null;  // 받아온 전적 데이터 임시 저장
+    let globalMatches = [];  // 받아온 매치 데이터 임시 저장
+    let currentNickname = "";
+
+    const mapNames = {
+        'Erangel_Main': '에란겔', 'Miramar': '미라마', 'Savage_Main': '사녹',
+        'Vikendi': '비켄디', 'Taego': '태고', 'Tiger_Main': '태고', 
+        'Neon_Main': '론도', 'Deston' : '데스턴', 'Karakin' : '카라킨', 'Range_Main' : '훈련장'
+    };
+
+    async function startSearch() {
+        const nickname = document.getElementById('nicknameInput').value.trim();
+        if (!nickname) return alert("닉네임을 입력해주세요.");
+
+        // 초기화
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('error-msg').style.display = 'none';
+        document.getElementById('main-content').style.display = 'none';
+        
+        try {
+            // 1. 기본 정보 조회
+            const searchRes = await fetch(`/search?nickname=${nickname}`);
+            if (!searchRes.ok) throw new Error("플레이어를 찾을 수 없습니다.");
+            const searchData = await searchRes.json();
+
+            currentNickname = searchData.nickname;
+            globalStats = searchData.stats; // 전역 변수에 저장
+            
+            // 2. 매치 정보 조회 (병렬 처리보다는 순차 처리로 에러 핸들링 단순화)
+            document.getElementById('loading').innerText = "매치 기록 분석 중...";
+            const matchRes = await fetch(`/matches?account_id=${searchData.account_id}`);
+            if (matchRes.ok) {
+                globalMatches = await matchRes.json();
+            } else {
+                globalMatches = [];
+            }
+
+            // 3. UI 그리기
+            updateUI(); 
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+
+        } catch (error) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error-msg').innerText = error.message;
+            document.getElementById('error-msg').style.display = 'block';
+        }
+    }
+
+    // TPP/FPP 토글 변경 시 호출됨
+    function updateUI() {
+        if (!globalStats) return; // 데이터 없으면 중단
+
+        // 현재 선택된 모드 확인 (tpp 또는 fpp)
+        const viewMode = document.querySelector('input[name="viewMode"]:checked').value;
+        const isFpp = viewMode === 'fpp';
+
+        document.getElementById('res-nickname').innerText = currentNickname;
+        
+        renderStats(isFpp);
+        renderMatches(isFpp);
+    }
+
+    function renderStats(isFpp) {
+        const container = document.getElementById('summary-stats');
+        container.innerHTML = '';
+
+        // 모드에 따라 키값 설정
+        const targetModes = isFpp 
+            ? ['solo-fpp', 'duo-fpp', 'squad-fpp'] 
+            : ['solo', 'duo', 'squad'];
+        
+        const modeTitles = ['솔로', '듀오', '스쿼드'];
+
+        targetModes.forEach((key, index) => {
+            const s = globalStats[key];
+            if (!s) return; // 데이터 없으면 스킵
+
+            // 계산
+            const kda = s.losses > 0 ? ((s.kills + s.assists) / s.losses).toFixed(2) : s.kills;
+            const winRate = s.roundsPlayed > 0 ? ((s.wins / s.roundsPlayed) * 100).toFixed(1) : 0;
+            const avgDmg = s.roundsPlayed > 0 ? (s.damageDealt / s.roundsPlayed).toFixed(0) : 0;
+
+            const html = `
+                <div class="stat-card">
+                    <h3>${modeTitles[index]}</h3>
+                    <div class="stat-detail"><span>KDA</span><span class="stat-val" style="color:#4dd0e1">${kda}</span></div>
+                    <div class="stat-detail"><span>승률</span><span class="stat-val">${winRate}%</span></div>
+                    <div class="stat-detail"><span>평균딜량</span><span class="stat-val">${avgDmg}</span></div>
+                    <div class="stat-detail"><span>판수</span><span class="stat-val">${s.roundsPlayed}</span></div>
+                    <div class="stat-detail"><span>치킨</span><span class="stat-val" style="color:var(--win-color)">${s.wins}회</span></div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+        if (container.innerHTML === '') {
+            container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666;">해당 모드 전적이 없습니다.</p>';
+        }
+    }
+
+    function renderMatches(isFpp) {
+        const container = document.getElementById('match-history');
+        container.innerHTML = '';
+
+        // 매치 필터링
+        const filteredMatches = globalMatches.filter(m => {
+            // m.mode 예: 'solo', 'squad-fpp'
+            if (isFpp) return m.mode.includes('fpp');
+            else return !m.mode.includes('fpp');
+        });
+
+        if (filteredMatches.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #666;">해당 모드의 최근 매치 기록이 없습니다.</p>';
+            return;
+        }
+
+        filteredMatches.forEach(m => {
+            const mapName = mapNames[m.map] || m.map;
+            const isWin = m.rank === 1;
+            const isTop10 = m.rank <= 10 && !isWin;
+            
+            // 모드 이름 표시 정리 (squad-fpp -> 스쿼드)
+            let modeDisplay = m.mode.replace('-fpp', '').toUpperCase();
+            if (modeDisplay === 'SQUAD') modeDisplay = '스쿼드';
+            else if (modeDisplay === 'DUO') modeDisplay = '듀오';
+            else if (modeDisplay === 'SOLO') modeDisplay = '솔로';
+
+            const html = `
+                <div class="match-item ${isWin ? 'win' : (isTop10 ? 'top10' : '')}">
+                    <div class="m-rank">#${m.rank}</div>
+                    <div class="m-info">
+                        <span class="m-map map-${m.map}">${mapName}</span>
+                        <div class="m-meta">${modeDisplay} · ${formatTime(m.timeSurvived)} 생존 · ${(m.date || '').substring(0,10)}</div>
+                    </div>
+                    <div class="m-stats">
+                        <div class="m-stat-item"><span>킬</span><strong>${m.kills}</strong></div>
+                        <div class="m-stat-item"><span>딜량</span><strong>${m.damage}</strong></div>
+                        <div class="m-stat-item"><span>기절</span><strong>${m.dbno}</strong></div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+    }
+
+    function formatTime(seconds) {
+        const min = Math.floor(seconds / 60);
+        const sec = Math.floor(seconds % 60);
+        return `${min}분 ${sec}초`;
+    }
+</script>
+</body>
+</html>
