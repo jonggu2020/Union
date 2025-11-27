@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUBG API 워크샵 발표자료</title>
+    <!-- Reveal.js CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/black.min.css">
+    <!-- Highlight.js for code syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/monokai.min.css">
+
+    <style>
+        /* PUBG Theme Customization */
+        :root {
+            --pubg-yellow: #f2a900;
+            --pubg-dark: #1b1b1b;
+            --pubg-text: #e0e0e0;
+        }
+        
+        .reveal { color: var(--pubg-text); }
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+            color: var(--pubg-yellow);
+            font-family: 'Impact', sans-serif;
+            text-transform: uppercase;
+        }
+        .reveal pre {
+            box-shadow: 0 0 10px rgba(242, 169, 0, 0.3);
+            border: 1px solid #555;
+        }
+        .accent { color: var(--pubg-yellow); font-weight: bold; }
+        .diagram-box {
+            border: 2px solid var(--pubg-yellow);
+            padding: 20px;
+            border-radius: 10px;
+            background: #333;
+            display: inline-block;
+            margin: 10px !important;
+        }
+        .arrow { font-size: 1.5em; vertical-align: middle; color: var(--pubg-yellow); }
+        
+        /* Folder structure styling */
+        .folder-structure {
+            text-align: left;
+            background: #222;
+            padding: 5px;
+            border-radius: 5px;
+            font-family: monospace;
+            display: inline-block;
+            line-height: 1.5;
+            font-size: 0.5em;
+        }
+        .folder-comment {
+            color: #888;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="reveal">
+    <div class="slides">
+
+        <!-- Slide 1: Title -->
+        <section>
+            <h1>PUBG 전적 검색<br>서비스 만들기</h1>
+            <h3>Open API & Python Flask 실습</h3>
+            <p>
+                <small>발표자: <span class="accent">이종구</span></small>
+            </p>
+            <p style="font-size: 0.6em; margin-top: 50px;">Use Arrow Keys to Navigate</p>
+        </section>
+
+        <!-- Slide 2: Architecture -->
+        <section>
+            <h2>시스템 구조</h2>
+            <p style="font-size: 0.8em;">왜 프론트엔드에서 바로 요청하면 안 될까?</p>
+            
+            <div style="display: flex; align-items: center; justify-content: center; margin-top: 30px;">
+                <div class="diagram-box">
+                    <div>🖥️ Client</div>
+                    <div style="font-size: 0.6em;">(HTML/JS)</div>
+                </div>
+                <div class="arrow">↔️</div>
+                <div class="diagram-box" style="box-shadow: 0 0 20px var(--pubg-yellow);">
+                    <div>🐍 Server</div>
+                    <div style="font-size: 0.6em;">(Python Flask)</div>
+                    <div style="font-size: 0.5em; color: var(--pubg-yellow);">★API Key 보관</div>
+                </div>
+                <div class="arrow">↔️</div>
+                <div class="diagram-box">
+                    <div>☁️ PUBG</div>
+                    <div style="font-size: 0.6em;">(Open API)</div>
+                </div>
+            </div>
+
+            <div style="font-size: 0.6em; margin-top: 30px; text-align: left; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px;">
+                <p>❌ <b>직접 요청 시 문제점:</b> 보안(Key 노출), CORS 에러 발생</p>
+                <p>✅ <b>해결책:</b> Python으로 <u>중계 서버(Proxy)</u>를 만들어 통신</p>
+            </div>
+        </section>
+
+        <!-- Slide 3: Prerequisites -->
+        <section>
+            <h2>사전 준비 (필수)</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start;">
+                <div>
+                    <h4>1. 라이브러리 설치</h4>
+                    <p style="font-size: 0.6em; text-align: left;">터미널(Terminal)에 입력하세요:</p>
+                    <pre><code class="bash" data-trim>
+pip install flask requests flask-cors
+                    </code></pre>
+                    <ul style="font-size: 0.5em; text-align: left; color: #aaa; margin-top: 10px;">
+                        <li><b>flask</b>: 웹 서버 프레임워크</li>
+                        <li><b>requests</b>: API 요청 도구</li>
+                        <li><b>flask-cors</b>: 브라우저 보안(CORS) 해결</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>2. 폴더 구조</h4>
+                    <div class="folder-structure">
+                        📂 내_프로젝트_폴더/<br>
+                        │<br>
+                        ├── 🐍 <b>app.py</b> <span class="folder-comment"># 서버 코드</span><br>
+                        │<br>
+                        └── 📂 <b>templates/</b> <span class="folder-comment"># 이름 필수!</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;│<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;└── 📄 <b>index.html</b>
+                    </div>
+                    <p style="font-size: 0.5em; color: #ff5252; margin-top: 15px; text-align: left;">
+                        ⚠️ 주의: index.html 파일은 반드시<br>
+                        'templates' 라는 이름의 폴더 안에 있어야 합니다.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 4: Hands-on -->
+        <section>
+            <h2>실습 진행 (Hands-on)</h2>
+            <ol style="font-size: 0.8em; line-height: 2.0;">
+                <li>바탕화면에 작업 폴더 생성</li>
+                <li>폴더 안에 <span class="accent">templates</span> 폴더 생성 (오타 주의!)</li>
+                <li><code>app.py</code> 작성 <span style="font-size: 0.8em; color: #aaa;">(API Key 붙여넣기)</span></li>
+                <li><code>templates/index.html</code> 작성</li>
+                <li>터미널 실행:
+                    <pre style="display: inline-block; margin: 0; vertical-align: middle;"><code class="bash" style="padding: 5px;">python app.py</code></pre>
+                </li>
+            </ol>
+            <div style="margin-top: 30px; border: 1px dashed var(--pubg-yellow); padding: 10px; font-size: 0.6em;">
+                💡 서버 코드는 <b>app.py</b>에, 화면 코드는 <b>index.html</b>에 복사하세요.
+            </div>
+        </section>
+
+        <!-- Slide 5: Troubleshooting -->
+        <section>
+            <h2>자주 발생하는 에러</h2>
+            <div style="font-size: 0.7em; text-align: left; background: #222; padding: 20px; border-radius: 10px;">
+                <p>⚠️ <span class="accent">404 Not Found (검색 실패)</span></p>
+                <ul>
+                    <li>닉네임 대소문자가 정확한지 확인</li>
+                    <li>코드 상단의 <code>PLATFORM</code>이 'steam'인지 'kakao'인지 확인</li>
+                </ul>
+                <hr style="border-color: #444;">
+                <p>⚠️ <span class="accent">Template Not Found</span></p>
+                <ul>
+                    <li><code>index.html</code>이 <code>templates</code> 폴더 바깥에 있는 경우</li>
+                    <li>폴더명 오타 (template ❌ → templates ⭕)</li>
+                </ul>
+                <hr style="border-color: #444;">
+                <p>⚠️ <span class="accent">서버 창이 2개 떠요</span></p>
+                <ul>
+                    <li>Debug 모드가 켜져 있어서 그렇습니다. 정상입니다!</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Slide 6: Closing -->
+        <section>
+            <h1>Q & A</h1>
+            <p>수고하셨습니다!</p>
+            <p style="font-size: 0.6em; color: #888;">Next Step: 킬 수 대신 헤드샷 비율 계산해보기</p>
+        </section>
+
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/highlight/highlight.min.js"></script>
+<script>
+    Reveal.initialize({
+        controls: true,
+        progress: true,
+        center: true,
+        hash: true,
+        plugins: [ RevealHighlight ]
+    });
+</script>
+
+</body>
+</html>
