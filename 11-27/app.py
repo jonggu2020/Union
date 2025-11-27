@@ -3,13 +3,14 @@ from flask_cors import CORS
 import requests
 import webbrowser
 from threading import Timer
+import os
 
 app = Flask(__name__)
 CORS(app)
 
 # ==========================================
 # 여기에 발급받은 PUBG API 키를 입력하세요
-PUBG_API_KEY = "Bearer 여기에_너의_긴_API_키를_넣어"
+PUBG_API_KEY = ""
 # 플랫폼 선택: steam 또는 kakao
 PLATFORM = "steam"
 # ==========================================
@@ -113,6 +114,7 @@ def open_browser():
     webbrowser.open_new('http://127.0.0.1:5000/')
 
 if __name__ == '__main__':
-    # 1초 뒤에 브라우저를 엽니다 (서버가 켜질 시간을 줌)
-    Timer(1, open_browser).start()
-    app.run(debug=True, port=5000)
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        Timer(1, open_browser).start()
+    
+    app.run(debug=True, host='0.0.0.0', port=5000)
