@@ -39,20 +39,17 @@
         }
         .arrow { font-size: 1.5em; vertical-align: middle; color: var(--pubg-yellow); }
         
-        /* Folder structure styling */
-        .folder-structure {
+        /* Box styling for instructions */
+        .instruction-box {
             text-align: left;
             background: #222;
-            padding: 5px;
-            border-radius: 5px;
+            padding: 15px;
+            border-radius: 10px;
             font-family: monospace;
             display: inline-block;
-            line-height: 1.5;
-            font-size: 0.5em;
-        }
-        .folder-comment {
-            color: #888;
-            margin-left: 5px;
+            line-height: 1.6;
+            font-size: 0.6em;
+            width: 100%;
         }
     </style>
 </head>
@@ -66,7 +63,7 @@
             <h1>PUBG 전적 검색<br>서비스 만들기</h1>
             <h3>Open API & Python Flask 실습</h3>
             <p>
-                <small>발표자: <span class="accent">이종구</span></small>
+                <small>발표자: <span class="accent"> 이종구</span></small>
             </p>
             <p style="font-size: 0.6em; margin-top: 50px;">Use Arrow Keys to Navigate</p>
         </section>
@@ -117,20 +114,18 @@ pip install flask requests flask-cors
                     </ul>
                 </div>
                 <div>
-                    <h4>2. 폴더 구조</h4>
-                    <div class="folder-structure">
-                        📂 내_프로젝트_폴더/<br>
-                        │<br>
-                        ├── 🐍 <b>app.py</b> <span class="folder-comment"># 서버 코드</span><br>
-                        │<br>
-                        └── 📂 <b>templates/</b> <span class="folder-comment"># 이름 필수!</span><br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;│<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;└── 📄 <b>index.html</b>
+                    <h4>2. 예제 코드 (Git Clone)</h4>
+                    <div class="instruction-box">
+                        <p style="color: var(--pubg-yellow); margin-bottom: 5px;">터미널에 입력하여 다운로드:</p>
+                        <pre><code class="bash" data-trim style="word-break: break-all; white-space: pre-wrap;">
+git clone https://github.com/jonggu2020/Union.git
+                        </code></pre>
+                        <hr style="border-color: #444; margin: 10px 0;">
+                        <p>
+                            🖥️ <b>Git Clone이란?</b><br>
+                            GitHub에 있는 코드를 내 컴퓨터로 그대로 복제해오는 명령어
+                        </p>
                     </div>
-                    <p style="font-size: 0.5em; color: #ff5252; margin-top: 15px; text-align: left;">
-                        ⚠️ 주의: index.html 파일은 반드시<br>
-                        'templates' 라는 이름의 폴더 안에 있어야 합니다.
-                    </p>
                 </div>
             </div>
         </section>
@@ -138,17 +133,23 @@ pip install flask requests flask-cors
         <!-- Slide 4: Hands-on -->
         <section>
             <h2>실습 진행 (Hands-on)</h2>
-            <ol style="font-size: 0.8em; line-height: 2.0;">
-                <li>바탕화면에 작업 폴더 생성</li>
-                <li>폴더 안에 <span class="accent">templates</span> 폴더 생성 (오타 주의!)</li>
-                <li><code>app.py</code> 작성 <span style="font-size: 0.8em; color: #aaa;">(API Key 붙여넣기)</span></li>
-                <li><code>templates/index.html</code> 작성</li>
-                <li>터미널 실행:
+            <ol style="font-size: 0.75em; line-height: 1.8;">
+                <li><b>VS Code</b> 실행 후 터미널 열기 <span style="font-size:0.8em; color:#aaa;">(Ctrl + `)</span></li>
+                <li><code>git clone</code> 명령어로 프로젝트 다운로드</li>
+                <li>
+                    <span class="accent">중요!</span> 폴더 열기 (Open Folder)<br>
+                    <span style="font-size: 0.8em; color: #aaa;"> File > Open Folder > 방금 다운받은 <b>pubg-project</b> 폴더 선택</span>
+                </li>
+                <li><b>app.py</b> 파일 열고 <b>API Key</b> 입력하기
+                    <pre style="width: 100%; margin: 5px 0;"><code class="python" style="padding: 10px;">PUBG_API_KEY = "Bearer 여기에_키_붙여넣기"</code></pre>
+                </li>
+                <li>서버 실행하기:
                     <pre style="display: inline-block; margin: 0; vertical-align: middle;"><code class="bash" style="padding: 5px;">python app.py</code></pre>
                 </li>
             </ol>
-            <div style="margin-top: 30px; border: 1px dashed var(--pubg-yellow); padding: 10px; font-size: 0.6em;">
-                💡 서버 코드는 <b>app.py</b>에, 화면 코드는 <b>index.html</b>에 복사하세요.
+            <div style="margin-top: 20px; border: 1px dashed var(--pubg-yellow); padding: 10px; font-size: 0.6em;">
+                💡 <b>팁:</b> 반드시 <u>Open Folder</u>로 프로젝트 폴더를 열어야<br>
+                경로 에러 없이 정상적으로 실행됩니다!
             </div>
         </section>
 
@@ -156,21 +157,21 @@ pip install flask requests flask-cors
         <section>
             <h2>자주 발생하는 에러</h2>
             <div style="font-size: 0.7em; text-align: left; background: #222; padding: 20px; border-radius: 10px;">
-                <p>⚠️ <span class="accent">404 Not Found (검색 실패)</span></p>
+                <p>⚠️ <span class="accent">ModuleNotFoundError</span></p>
                 <ul>
-                    <li>닉네임 대소문자가 정확한지 확인</li>
-                    <li>코드 상단의 <code>PLATFORM</code>이 'steam'인지 'kakao'인지 확인</li>
+                    <li>라이브러리 설치가 안 된 경우입니다.</li>
+                    <li><code>pip install flask requests flask-cors</code> 실행</li>
                 </ul>
                 <hr style="border-color: #444;">
                 <p>⚠️ <span class="accent">Template Not Found</span></p>
                 <ul>
-                    <li><code>index.html</code>이 <code>templates</code> 폴더 바깥에 있는 경우</li>
-                    <li>폴더명 오타 (template ❌ → templates ⭕)</li>
+                    <li>VS Code에서 <b>폴더 열기(Open Folder)</b>를 안 했을 때 주로 발생!</li>
+                    <li>app.py가 있는 폴더를 통째로 열었는지 확인하세요.</li>
                 </ul>
                 <hr style="border-color: #444;">
                 <p>⚠️ <span class="accent">서버 창이 2개 떠요</span></p>
                 <ul>
-                    <li>Debug 모드가 켜져 있어서 그렇습니다. 정상입니다!</li>
+                    <li>Debug 모드 특성입니다. 정상입니다!</li>
                 </ul>
             </div>
         </section>
